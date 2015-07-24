@@ -42,58 +42,61 @@ static UISwipeGestureRecognizer *arpeggioSwipeGestureRecognizer;
 
 %hook MusicNowPlayingViewController
 
-- (void)viewDidAppear:(BOOL)animated {
-	%orig(animated);
+- (void)viewDidLayoutSubviews {
+	%orig();
 
-	UIView *albumArtworkView = self.currentItemViewController.view.subviews[0];
+	if (![self.view.gestureRecognizers containsObject:arpeggioSwipeGestureRecognizer]) {	
+		arpeggioSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_swipeRecognized:)];
+		arpeggioSwipeGestureRecognizer.cancelsTouchesInView = YES;
+		arpeggioSwipeGestureRecognizer.delaysTouchesBegan = YES;
+		// arpeggioSwipeGestureRecognizer.delegate = self;
+		arpeggioSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft | UISwipeGestureRecognizerDirectionRight | UISwipeGestureRecognizerDirectionUp | UISwipeGestureRecognizerDirectionDown;
+		[self.view addGestureRecognizer:arpeggioSwipeGestureRecognizer];
 
-	if (arpeggioSwipeGestureRecognizer) {
-		[albumArtworkView removeGestureRecognizer:arpeggioSwipeGestureRecognizer];
-		arpeggioSwipeGestureRecognizer = nil;
+		NSLog(@"[Arpeggio] Added %@ to %@ in %@ for swipe recognition!", arpeggioSwipeGestureRecognizer, self.view, self);
 	}
-	
-	arpeggioSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_swipeRecognized:)];
-	arpeggioSwipeGestureRecognizer.cancelsTouchesInView = YES;
-	arpeggioSwipeGestureRecognizer.delaysTouchesBegan = YES;
-	// arpeggioSwipeGestureRecognizer.delegate = self;
-	arpeggioSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft | UISwipeGestureRecognizerDirectionRight | UISwipeGestureRecognizerDirectionUp | UISwipeGestureRecognizerDirectionDown;
-	[albumArtworkView addGestureRecognizer:arpeggioSwipeGestureRecognizer];
 }
 
 %new
 - (void)arpeggio_swipeRecognized:(UISwipeGestureRecognizer *)sender {
-	if (sender.state != UIGestureRecognizerStateEnded) {
-		return;
+	NSLog(@"[Arpeggio] Recognized swipe from %@...", sender);
+	if (sender.direction | UISwipeGestureRecognizerDirectionLeft) { // previous track
+		// MPUTransportControl *previousTrackControl = [self.transportControls availableTransportControlWithType:1];
+		[self transportControlsView:self.transportControls tapOnControlType:1];
+		NSLog(@"[Arpeggio] Seeked to the previous track using %@", self.transportControls);
 	}
 
-	switch(sender.direction) {
-		case UISwipeGestureRecognizerDirectionRight: // previous track
-			// MPUTransportControl *previousTrackControl = [self.transportControls availableTransportControlWithType:1];
-			[self transportControlsView:self.transportControls tapOnControlType:1];
-			break;
-		case UISwipeGestureRecognizerDirectionLeft: // next track
-			[self transportControlsView:self.transportControls tapOnControlType:4];
-			break;
-		case UISwipeGestureRecognizerDirectionUp: { // seek forward, or stop seeking
-			if ([self.player isSeekingOrScrubbing]) {
-				[self.player endSeek];
-			}
+	else if (sender.direction | UISwipeGestureRecognizerDirectionRight) { // next track
+		[self transportControlsView:self.transportControls tapOnControlType:4];
+		NSLog(@"[Arpeggio] Seeked to the next track using %@", self.transportControls);
+	}
 
-			else {
-				[self.player beginSeek:1];
-			}
-			break;
-		}	
-		case UISwipeGestureRecognizerDirectionDown: { // seek backwards, or stop seeking
-			if ([self.player isSeekingOrScrubbing]) {
-				[self.player endSeek];
-			}
-
-			else {
-				[self.player beginSeek:-1];
-			}			
-			break;
+	else if (sender.direction | UISwipeGestureRecognizerDirectionUp) {  // seek forward, or stop seeking
+		if ([self.player isSeekingOrScrubbing]) {
+			[self.player endSeek];
+			NSLog(@"[Arpeggio] Ended seeking or scrubbing with %@", self.player);
 		}
+
+		else {
+			[self.player beginSeek:1];
+			NSLog(@"[Arpeggio] Began seeking forward with %@", self.player);
+		}
+	}
+	
+	else if (sender.direction | UISwipeGestureRecognizerDirectionDown) { // seek backwards, or stop seeking
+		if ([self.player isSeekingOrScrubbing]) {
+			[self.player endSeek];
+			NSLog(@"[Arpeggio] Ended seeking or scrubbing with %@", self.player);
+		}
+
+		else {
+			[self.player beginSeek:-1];
+			NSLog(@"[Arpeggio] Began seeking backward with %@", self.player);
+		}			
+	}
+
+	else {
+		NSLog(@"[Arpeggio] Swiped in impossible direction: %i. The possibilities are normally left (%i), right (%i), up (%i), or down (%i).", (int)sender.direction, (int)UISwipeGestureRecognizerDirectionLeft, (int)UISwipeGestureRecognizerDirectionRight, (int)UISwipeGestureRecognizerDirectionUp, (int)UISwipeGestureRecognizerDirectionDown);
 	}
 }
 
