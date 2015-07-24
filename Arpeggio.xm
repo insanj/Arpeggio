@@ -8,8 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-static UISwipeGestureRecognizer *arpeggioLeftSwipeGestureRecognizer, *arpeggioRightSwipeGestureRecognizer, *arpeggioUpSwipeGestureRecognizer, *arpeggioDownSwipeGestureRecognizer;
-
 @class MusicNowPlayingItemViewController;
 
 @interface MPUTransportControl : UIView
@@ -38,10 +36,12 @@ static UISwipeGestureRecognizer *arpeggioLeftSwipeGestureRecognizer, *arpeggioRi
 @interface MusicNowPlayingViewController (Arpeggio) <UIGestureRecognizerDelegate>
 - (void)arpeggio_leftSwipeRecognized:(UISwipeGestureRecognizer *)sender;
 - (void)arpeggio_rightSwipeRecognized:(UISwipeGestureRecognizer *)sender;
-- (void)arpeggio_upSwipeRecognized:(UISwipeGestureRecognizer *)sender;
-- (void)arpeggio_downSwipeRecognized:(UISwipeGestureRecognizer *)sender;
+- (void)arpeggio_oneFingerPressRecognized:(UILongPressGestureRecognizer *)sender;
+- (void)arpeggio_twoFingerPressRecognized:(UILongPressGestureRecognizer *)sender;
 @end
 
+static UILongPressGestureRecognizer *arpeggioLongPressOneFingerGestureRecognizer, *arpeggioLongPressTwoFingersGestureRecognizer;
+static UISwipeGestureRecognizer *arpeggioLeftSwipeGestureRecognizer, *arpeggioRightSwipeGestureRecognizer;
 
 %hook MusicNowPlayingViewController
 
@@ -51,23 +51,23 @@ static UISwipeGestureRecognizer *arpeggioLeftSwipeGestureRecognizer, *arpeggioRi
 	if (![self.view.gestureRecognizers containsObject:arpeggioRightSwipeGestureRecognizer]) {	
 		arpeggioLeftSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_leftSwipeRecognized:)];
 		arpeggioRightSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_rightSwipeRecognized:)];
-		arpeggioUpSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_upSwipeRecognized:)];
-		arpeggioDownSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_downSwipeRecognized:)];
-
+		
 		arpeggioLeftSwipeGestureRecognizer.delaysTouchesBegan =
-		arpeggioRightSwipeGestureRecognizer.delaysTouchesBegan = 
-		arpeggioUpSwipeGestureRecognizer.delaysTouchesBegan =
-		arpeggioDownSwipeGestureRecognizer.delaysTouchesBegan = YES;
+		arpeggioRightSwipeGestureRecognizer.delaysTouchesBegan = YES;
 
 		arpeggioLeftSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
 		arpeggioRightSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
-		arpeggioUpSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionUp;
-		arpeggioDownSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionDown;
+
+		arpeggioLongPressOneFingerGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_oneFingerPressRecognized:)];
+		arpeggioLongPressTwoFingersGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_twoFingerPressRecognized:)];
+
+		arpeggioLongPressOneFingerGestureRecognizer.numberOfTouchesRequired = 1;
+		arpeggioLongPressTwoFingersGestureRecognizer.numberOfTouchesRequired = 2;
 
 		[self.view addGestureRecognizer:arpeggioLeftSwipeGestureRecognizer];
 		[self.view addGestureRecognizer:arpeggioRightSwipeGestureRecognizer];
-		[self.view addGestureRecognizer:arpeggioUpSwipeGestureRecognizer];
-		[self.view addGestureRecognizer:arpeggioDownSwipeGestureRecognizer];
+		[self.view addGestureRecognizer:arpeggioLongPressOneFingerGestureRecognizer];
+		[self.view addGestureRecognizer:arpeggioLongPressTwoFingersGestureRecognizer];
 
 		NSLog(@"[Arpeggio] Added gesture recognizers in %@ (%@) for swipe recognition", self, self.view);
 	}
@@ -89,27 +89,27 @@ static UISwipeGestureRecognizer *arpeggioLeftSwipeGestureRecognizer, *arpeggioRi
 }
 
 %new
-- (void)arpeggio_upSwipeRecognized:(UISwipeGestureRecognizer *)sender { // seek forward, or stop seeking
-	if ([self.player isSeekingOrScrubbing]) {
+- (void)arpeggio_oneFingerPressRecognized:(UILongPressGestureRecognizer *)sender { // seek forward, or stop seeking
+	if (sender.state == UIGestureRecognizerStateEnded) {
 		[self.player endSeek];
 		NSLog(@"[Arpeggio] Ended seeking or scrubbing with %@", self.player);
 	}
 
 	else {
-		[self.player beginSeek:1];
+		[self.player beginSeek:2];
 		NSLog(@"[Arpeggio] Began seeking forward with %@", self.player);
 	}
 }
 
 %new
-- (void)arpeggio_downSwipeRecognized:(UISwipeGestureRecognizer *)sender {
-	if ([self.player isSeekingOrScrubbing]) {
+- (void)arpeggio_twoFingerPressRecognized:(UILongPressGestureRecognizer *)sender { // seek backward, or stop seeking
+	if (sender.state == UIGestureRecognizerStateEnded) {
 		[self.player endSeek];
 		NSLog(@"[Arpeggio] Ended seeking or scrubbing with %@", self.player);
 	}
 
 	else {
-		[self.player beginSeek:-1];
+		[self.player beginSeek:-2];
 		NSLog(@"[Arpeggio] Began seeking backward with %@", self.player);
 	}	
 }

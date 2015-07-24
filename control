@@ -3,7 +3,7 @@ Name: Arpeggio
 Pre-Depends: firmware (>= 8.4)
 Replaces: com.ckant.musicgestures, com.ckant.swipablemusic
 Depends: mobilesubstrate
-Version: 0.1
+Version: 1.0
 Architecture: iphoneos-arm
 Description: Quickly seek your Music with gestures.
 Maintainer: Julian Weiss <insanj@gmail.com>
