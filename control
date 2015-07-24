@@ -1,0 +1,10 @@
+Package: com.insanj.arpeggio
+Name: Arpeggio
+Pre-Depends: firmware (>= 8.4)
+Depends: mobilesubstrate
+Version: 0.1
+Architecture: iphoneos-arm
+Description: Quickly seek your Music with gestures.
+Maintainer: Julian Weiss <insanj@gmail.com>
+Author: Julian (insanj) Weiss
+Section: Tweaks
