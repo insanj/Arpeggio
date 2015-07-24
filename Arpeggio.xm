@@ -16,7 +16,7 @@ static UISwipeGestureRecognizer *arpeggioSwipeGestureRecognizer;
 @end
 
 @interface MPUTransportControlsView : UIView
-- (MPUTransportControl)availableTransportControlWithType:(NSInteger)type;
+- (MPUTransportControl *)availableTransportControlWithType:(NSInteger)type;
 @end
 
 @interface MusicAVPlayer : NSObject
@@ -53,17 +53,20 @@ static UISwipeGestureRecognizer *arpeggioSwipeGestureRecognizer;
 	}
 	
 	arpeggioSwipeGestureRecognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(arpeggio_swipeRecognized:)];
+	arpeggioSwipeGestureRecognizer.cancelsTouchesInView = YES;
+	arpeggioSwipeGestureRecognizer.delaysTouchesBegan = YES;
 	// arpeggioSwipeGestureRecognizer.delegate = self;
-	swipeRecognizer.direction = UISwipeGestureRecognizerDirectionLeft | UISwipeGestureRecognizerDirectionRight | UISwipeGestureRecognizerDirectionUp | UISwipeGestureRecognizerDirectionDown;
-	[albumArtworkView addGestureRecognizer:swipeRecognizer];
+	arpeggioSwipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft | UISwipeGestureRecognizerDirectionRight | UISwipeGestureRecognizerDirectionUp | UISwipeGestureRecognizerDirectionDown;
+	[albumArtworkView addGestureRecognizer:arpeggioSwipeGestureRecognizer];
 }
 
+%new
 - (void)arpeggio_swipeRecognized:(UISwipeGestureRecognizer *)sender {
 	if (sender.state != UIGestureRecognizerStateEnded) {
 		return;
 	}
 
-	switch(swipeGestureRecognizer.direction) {
+	switch(sender.direction) {
 		case UISwipeGestureRecognizerDirectionRight: // previous track
 			// MPUTransportControl *previousTrackControl = [self.transportControls availableTransportControlWithType:1];
 			[self transportControlsView:self.transportControls tapOnControlType:1];

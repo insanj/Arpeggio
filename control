@@ -1,6 +1,7 @@
 Package: com.insanj.arpeggio
 Name: Arpeggio
 Pre-Depends: firmware (>= 8.4)
+Replaces: com.ckant.musicgestures, com.ckant.swipablemusic
 Depends: mobilesubstrate
 Version: 0.1
 Architecture: iphoneos-arm
